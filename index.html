@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EventOps Copilot Prototype</title>
+<style>
+  :root{
+    --navy:#213149;
+    --navy-2:#314563;
+    --ink:#28323f;
+    --muted:#6d7886;
+    --line:#e5e8ee;
+    --paper:#ffffff;
+    --bg:#f6f7fb;
+    --blush:#f8edf3;
+    --blue:#eef5fb;
+    --mint:#eaf5ef;
+    --lav:#f0ecf8;
+    --warn:#fff7df;
+    --danger:#fae9ec;
+    --shadow:0 18px 50px rgba(33,49,73,.10);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:linear-gradient(180deg,#f9fafc 0%,#f3f5f9 100%);
+    color:var(--ink);
+  }
+
+  button, input, textarea{font:inherit}
+
+  .app{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    min-height:100vh;
+  }
+
+  .sidebar{
+    background:var(--navy);
+    color:#fff;
+    padding:26px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:4px 6px 14px;
+  }
+
+  .logo{
+    width:36px;
+    height:36px;
+    border-radius:12px;
+    background:linear-gradient(135deg,#ff73ad,#8dbef2);
+    display:grid;
+    place-items:center;
+    font-weight:800;
+    box-shadow:0 8px 18px rgba(0,0,0,.18);
+  }
+
+  .brand strong{
+    font-size:16px;
+    letter-spacing:.2px;
+  }
+
+  .brand small{
+    display:block;
+    color:#ccd5e3;
+    margin-top:2px;
+    font-size:11px;
+  }
+
+  .nav{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .nav button{
+    width:100%;
+    border:0;
+    color:#dfe6ef;
+    background:transparent;
+    text-align:left;
+    padding:11px 12px;
+    border-radius:12px;
+    cursor:pointer;
+  }
+
+  .nav button.active{
+    background:rgba(255,255,255,.11);
+    color:#fff;
+    font-weight:700;
+  }
+
+  .pilot-card{
+    margin-top:auto;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;
+    padding:14px;
+  }
+
+  .pilot-card .eyebrow{
+    color:#b9c7d9;
+  }
+
+  .progress{
+    height:7px;
+    background:rgba(255,255,255,.12);
+    border-radius:99px;
+    overflow:hidden;
+    margin:10px 0 7px;
+  }
+
+  .progress span{
+    display:block;
+    height:100%;
+    width:38%;
+    background:#9dd8b7;
+    border-radius:99px;
+  }
+
+  .main{
+    padding:28px 34px 44px;
+    max-width:1300px;
+    width:100%;
+    margin:0 auto;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-size:28px;
+    margin:0 0 6px;
+    color:var(--navy);
+  }
+
+  .sub{
+    color:var(--muted);
+    margin:0;
+    font-size:14px;
+  }
+
+  .status{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    border-radius:999px;
+    background:var(--mint);
+    color:#2f6c49;
+    font-size:12px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+
+  .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#65b487;
+  }
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+
+  .verified{
+    padding:18px 20px;
+    margin-bottom:18px;
+  }
+
+  .verified-head{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+
+  .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    font-size:10px;
+    font-weight:800;
+    color:var(--muted);
+  }
+
+  .verified h2{
+    margin:3px 0 0;
+    font-size:19px;
+    color:var(--navy);
+  }
+
+  .fields{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+
+  .field{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 12px;
+    background:#fbfcfe;
+  }
+
+  .field span{
+    display:block;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    font-weight:800;
+    margin-bottom:4px;
+  }
+
+  .field strong{
+    font-size:13px;
+    color:var(--navy);
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(0,1.45fr) minmax(320px,.8fr);
+    gap:18px;
+    align-items:start;
+  }
+
+  .message-card{
+    overflow:hidden;
+  }
+
+  .tabs{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border-bottom:1px solid var(--line);
+    background:#fbfcfe;
+  }
+
+  .tab{
+    border:0;
+    border-right:1px solid var(--line);
+    background:transparent;
+    padding:13px 8px;
+    cursor:pointer;
+    color:var(--muted);
+    font-weight:700;
+    font-size:12px;
+  }
+
+  .tab:last-child{border-right:0}
+
+  .tab.active{
+    background:var(--navy);
+    color:#fff;
+  }
+
+  .message-body{
+    padding:22px;
+  }
+
+  .message-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+
+  .audience-badge{
+    width:36px;
+    height:36px;
+    border-radius:12px;
+    background:var(--blue);
+    display:grid;
+    place-items:center;
+    color:var(--navy);
+    font-weight:900;
+  }
+
+  .message-title h3{
+    margin:0;
+    font-size:18px;
+    color:var(--navy);
+  }
+
+  .message-title p{
+    margin:2px 0 0;
+    color:var(--muted);
+    font-size:12px;
+  }
+
+  .message{
+    background:var(--blush);
+    border:1px solid #eddde5;
+    border-radius:16px;
+    padding:17px;
+    line-height:1.55;
+    font-size:14px;
+  }
+
+  .fidelity{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-top:14px;
+  }
+
+  .pass{
+    text-align:center;
+    padding:9px 6px;
+    border-radius:12px;
+    background:var(--mint);
+    color:#37684c;
+    font-size:11px;
+    font-weight:800;
+  }
+
+  .actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+    margin-top:16px;
+  }
+
+  .btn{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--navy);
+    padding:10px 13px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:750;
+    font-size:12px;
+  }
+
+  .btn.primary{
+    background:var(--navy);
+    color:#fff;
+    border-color:var(--navy);
+  }
+
+  .btn.challenge{
+    background:var(--danger);
+    border-color:#f2d2d8;
+    color:#8d3a4c;
+  }
+
+  .side-stack{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .side-card{
+    padding:17px;
+  }
+
+  .side-card h3{
+    margin:5px 0 12px;
+    font-size:15px;
+    color:var(--navy);
+  }
+
+  .source{
+    padding:11px 0;
+    border-top:1px solid var(--line);
+  }
+
+  .source:first-of-type{
+    border-top:0;
+    padding-top:2px;
+  }
+
+  .source strong{
+    display:block;
+    font-size:12px;
+    margin-bottom:2px;
+  }
+
+  .source span{
+    color:var(--muted);
+    font-size:11px;
+  }
+
+  .feedback{
+    background:var(--lav);
+  }
+
+  .feedback blockquote{
+    margin:0;
+    padding:12px;
+    border-radius:12px;
+    background:#fff;
+    border:1px solid #e1dced;
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .feedback-result{
+    margin-top:10px;
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .feedback-result strong{
+    color:#5e4b86;
+  }
+
+  .timeline{
+    padding:17px;
+  }
+
+  .timeline-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .phase{
+    border-radius:12px;
+    padding:10px;
+    background:#fbfcfe;
+    border:1px solid var(--line);
+    min-height:82px;
+  }
+
+  .phase.active{
+    background:var(--blue);
+    border-color:#d6e5f1;
+  }
+
+  .phase strong{
+    display:block;
+    font-size:11px;
+    color:var(--navy);
+    margin-bottom:4px;
+  }
+
+  .phase span{
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.35;
+  }
+
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(20,30,43,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:20;
+  }
+
+  .modal-backdrop.open{display:flex}
+
+  .modal{
+    width:min(520px,100%);
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 24px 80px rgba(0,0,0,.25);
+    padding:22px;
+  }
+
+  .modal h3{
+    margin:0 0 6px;
+    color:var(--navy);
+  }
+
+  .modal p{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .choice-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin:14px 0;
+  }
+
+  .choice{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    cursor:pointer;
+    background:#fff;
+    text-align:left;
+    font-size:12px;
+  }
+
+  .choice.selected{
+    background:var(--warn);
+    border-color:#eadcae;
+  }
+
+  textarea{
+    width:100%;
+    min-height:92px;
+    resize:vertical;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px;
+    outline:none;
+  }
+
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:12px;
+  }
+
+  .toast{
+    position:fixed;
+    right:24px;
+    bottom:24px;
+    background:var(--navy);
+    color:#fff;
+    padding:12px 14px;
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    font-size:12px;
+    display:none;
+    z-index:30;
+  }
+
+  .toast.show{display:block}
+
+  .sources-drawer{
+    display:none;
+  }
+
+  .sources-drawer.open{
+    display:block;
+  }
+
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .main{padding:20px}
+    .layout{grid-template-columns:1fr}
+  }
+
+  @media (max-width:700px){
+    .fields,.fidelity,.timeline-grid{grid-template-columns:1fr 1fr}
+    .tabs{grid-template-columns:1fr 1fr}
+    .topbar{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">E</div>
+      <div>
+        <strong>EventOps Copilot</strong>
+        <small>Communication prototype</small>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="active">Change communication</button>
+      <button onclick="scrollToSection('timeline')">Pilot rollout</button>
+      <button onclick="scrollToSection('feedback')">Employee feedback</button>
+      <button onclick="openSources()">Source trace</button>
+    </div>
+
+    <div class="pilot-card">
+      <div class="eyebrow">Eight week pilot</div>
+      <strong>Week 3 of 8</strong>
+      <div class="progress"><span></span></div>
+      <small>Employee-first testing with human approval</small>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Event change communication</h1>
+        <p class="sub">One verified operational change translated for four audiences while the factual core stays fixed.</p>
+      </div>
+      <div class="status"><span class="dot"></span> Verified change ready for review</div>
+    </div>
+
+    <section class="card verified">
+      <div class="verified-head">
+        <div>
+          <div class="eyebrow">Verified operational change</div>
+          <h2>City Rooftop venue update</h2>
+        </div>
+        <button class="btn" onclick="openSources()">View source trace</button>
+      </div>
+
+      <div class="fields">
+        <div class="field"><span>Venue</span><strong>City Rooftop</strong></div>
+        <div class="field"><span>Time</span><strong>8.30 p.m.</strong></div>
+        <div class="field"><span>Owner</span><strong>City Lead</strong></div>
+        <div class="field"><span>Escalation</span><strong>Text Ops</strong></div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="card message-card">
+        <div class="tabs">
+          <button class="tab active" data-audience="csuite">C-Suite</button>
+          <button class="tab" data-audience="lead">Event Lead</button>
+          <button class="tab" data-audience="host">Host</button>
+          <button class="tab" data-audience="guest">Guest</button>
+        </div>
+
+        <div class="message-body">
+          <div class="message-title">
+            <div class="audience-badge" id="badge">C</div>
+            <div>
+              <h3 id="audienceTitle">C-Suite update</h3>
+              <p id="audienceSub">Executive impact and business continuity</p>
+            </div>
+          </div>
+
+          <div class="message" id="messageText">
+            One venue conflict was resolved at 7.52 p.m. Forty-two guests were affected. The event remains on schedule. The City Lead owns closeout and no external message is sent without human approval.
+          </div>
+
+          <div class="fidelity">
+            <div class="pass">Venue pass</div>
+            <div class="pass">Time pass</div>
+            <div class="pass">Owner pass</div>
+            <div class="pass">Escalation pass</div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" onclick="approveMessage()">Approve message</button>
+            <button class="btn challenge" onclick="openChallenge()">Challenge message</button>
+            <button class="btn" onclick="openSources()">View sources</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="card side-card sources-drawer" id="sources">
+          <div class="eyebrow">Source trace</div>
+          <h3>Approved records used</h3>
+          <div class="source">
+            <strong>Venue confirmation</strong>
+            <span>Updated 7.52 p.m. by City Lead</span>
+          </div>
+          <div class="source">
+            <strong>Event brief</strong>
+            <span>Updated 7.54 p.m. after venue check</span>
+          </div>
+          <div class="source">
+            <strong>Guest message template</strong>
+            <span>Approved version 4.2</span>
+          </div>
+          <div class="source">
+            <strong>Escalation guide</strong>
+            <span>Operations owner confirmed</span>
+          </div>
+        </section>
+
+        <section class="card side-card feedback" id="feedback">
+          <div class="eyebrow">You said, we changed</div>
+          <h3>Employee feedback loop</h3>
+          <blockquote>
+            “The guest message needs to explain where the rooftop entrance is. People will still go to the old door.”
+          </blockquote>
+          <div class="feedback-result">
+            <strong>Changed after host review</strong><br>
+            Guest template now includes the entrance note and directs unresolved access questions to the City Lead.
+          </div>
+        </section>
+
+        <section class="card timeline" id="timeline">
+          <div class="eyebrow">Pilot rollout</div>
+          <h3 style="margin:5px 0 0;color:var(--navy)">Human approval stays active in every phase</h3>
+          <div class="timeline-grid">
+            <div class="phase"><strong>Days 0 to 14</strong><span>Listen, map, and baseline</span></div>
+            <div class="phase active"><strong>Days 15 to 28</strong><span>Shadow and stress-test</span></div>
+            <div class="phase"><strong>Days 29 to 42</strong><span>Bounded live pilot</span></div>
+            <div class="phase"><strong>Days 43 to 56</strong><span>Scale decision</span></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="challengeModal">
+  <div class="modal">
+    <div class="eyebrow">Employee challenge</div>
+    <h3>What needs human review?</h3>
+    <p>Challenges are logged as implementation feedback. They are not used to rank individual employees.</p>
+
+    <div class="choice-grid">
+      <button class="choice" onclick="selectChoice(this)">Wrong fact</button>
+      <button class="choice" onclick="selectChoice(this)">Missing local context</button>
+      <button class="choice" onclick="selectChoice(this)">Tone does not fit audience</button>
+      <button class="choice" onclick="selectChoice(this)">Escalation owner is unclear</button>
+    </div>
+
+    <textarea placeholder="Add a short note for the human owner"></textarea>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeChallenge()">Cancel</button>
+      <button class="btn primary" onclick="submitChallenge()">Send to human owner</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const audienceContent = {
+  csuite:{
+    badge:"C",
+    title:"C-Suite update",
+    sub:"Executive impact and business continuity",
+    text:"One venue conflict was resolved at 7.52 p.m. Forty-two guests were affected. The event remains on schedule. The City Lead owns closeout and no external message is sent without human approval."
+  },
+  lead:{
+    badge:"L",
+    title:"Event Lead action",
+    sub:"Operational instruction and accountability",
+    text:"Confirm rooftop access by 8.00 p.m. Replace the outdated brief. Assign the door lead. Report any unresolved access issue to Text Ops before guest arrival."
+  },
+  host:{
+    badge:"H",
+    title:"Host shift message",
+    sub:"What the frontline employee needs right now",
+    text:"Report to City Rooftop at 8.10 p.m. Use the approved guest script. Send access questions to the City Lead. Keep the prior brief archived for reference."
+  },
+  guest:{
+    badge:"G",
+    title:"Guest update",
+    sub:"Clear external message using the same verified facts",
+    text:"Tonight’s Parlor event is at City Rooftop. Doors open at 8.30 p.m. Use the rooftop entrance beside the main lobby. Reply to this message if you need help finding the entrance."
+  }
+};
+
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    const a = audienceContent[tab.dataset.audience];
+    document.getElementById("badge").textContent = a.badge;
+    document.getElementById("audienceTitle").textContent = a.title;
+    document.getElementById("audienceSub").textContent = a.sub;
+    document.getElementById("messageText").textContent = a.text;
+  });
+});
+
+function openChallenge(){
+  document.getElementById("challengeModal").classList.add("open");
+}
+
+function closeChallenge(){
+  document.getElementById("challengeModal").classList.remove("open");
+}
+
+function selectChoice(el){
+  document.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+function submitChallenge(){
+  closeChallenge();
+  showToast("Challenge sent to the human owner and added to the pilot feedback log.");
+}
+
+function approveMessage(){
+  showToast("Message approved by a human reviewer. Distribution is still controlled.");
+}
+
+function openSources(){
+  const el = document.getElementById("sources");
+  el.classList.add("open");
+  el.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function scrollToSection(id){
+  document.getElementById(id).scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function showToast(text){
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2800);
+}
+</script>
+</body>
+</html>
